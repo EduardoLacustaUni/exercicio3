@@ -3,6 +3,7 @@ package com.kegel.app.data.local
 import android.content.Context
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import com.kegel.app.data.model.EventStatus
 import com.kegel.app.data.model.ScheduledEvent
 
 class PreferencesManager(context: Context) {
@@ -47,5 +48,21 @@ class PreferencesManager(context: Context) {
     fun saveHistoryEvents(events: List<ScheduledEvent>) {
         val json = gson.toJson(events)
         sharedPrefs.edit().putString("history_events", json).apply()
+    }
+
+    fun updateEventStatus(eventId: String, status: EventStatus): ScheduledEvent? {
+        val updatedEvents = getScheduledEvents().map { event ->
+            if (event.id == eventId) event.copy(status = status) else event
+        }
+        saveScheduledEvents(updatedEvents)
+
+        val updatedEvent = updatedEvents.find { it.id == eventId } ?: return null
+        if (status == EventStatus.COMPLETED || status == EventStatus.MISSED) {
+            val history = getHistoryEvents().toMutableList()
+            history.removeAll { it.id == eventId }
+            history.add(updatedEvent)
+            saveHistoryEvents(history)
+        }
+        return updatedEvent
     }
 }

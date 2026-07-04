@@ -2,7 +2,6 @@ package com.kegel.app.ui.viewmodel
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.viewModelScope
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
@@ -15,7 +14,6 @@ import com.kegel.app.worker.ReminderWorker
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
@@ -90,29 +88,40 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     // Core business logic: Generate schedule & program WorkManager
     fun generateAndSchedulePlan() {
+        generateAndSchedulePlan(null)
+    }
+
+    fun generateAndSchedulePlan(type: EventType?) {
         val newSchedule = EventSchedulerHelper.generateDailySchedule(
             startHour = _startHour.value,
             endHour = _endHour.value,
-            kegelCount = _kegelCount.value,
+            kegelCount = if (type == null || type == EventType.KEGEL) _kegelCount.value else 0,
             kegelDuration = _kegelDuration.value,
-            meditationCount = _meditationCount.value,
+            meditationCount = if (type == null || type == EventType.MEDITATION) _meditationCount.value else 0,
             meditationDuration = _meditationDuration.value
         )
 
-        // Save locally
-        prefs.saveScheduledEvents(newSchedule)
-        _scheduledEvents.value = newSchedule
+        val currentEvents = if (type == null) {
+            emptyList()
+        } else {
+            _scheduledEvents.value.filter { it.type != type }
+        }
+        val mergedSchedule = (currentEvents + newSchedule).sortedBy { it.timestampMillis }
 
-        // Program background workers
-        scheduleEventsInWorkManager(newSchedule)
+        prefs.saveScheduledEvents(mergedSchedule)
+        _scheduledEvents.value = mergedSchedule
 
-        // Recompute progress
+        scheduleEventsInWorkManager(newSchedule, type)
+
         computeTodayProgress()
     }
 
-    private fun scheduleEventsInWorkManager(events: List<ScheduledEvent>) {
-        // Cancel all previous work
-        workManager.cancelAllWorkByTag(TAG_DAILY_PLAN)
+    private fun scheduleEventsInWorkManager(events: List<ScheduledEvent>, type: EventType?) {
+        if (type == null) {
+            workManager.cancelAllWorkByTag(TAG_DAILY_PLAN)
+        } else {
+            workManager.cancelAllWorkByTag(tagForType(type))
+        }
 
         val now = System.currentTimeMillis()
         events.forEach { event ->
@@ -128,6 +137,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         )
                     )
                     .addTag(TAG_DAILY_PLAN)
+                    .addTag(tagForType(event.type))
                     .build()
 
                 workManager.enqueue(workRequest)
@@ -142,30 +152,28 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         computeTodayProgress()
     }
 
+    fun cancelSchedules(type: EventType) {
+        workManager.cancelAllWorkByTag(tagForType(type))
+        val remainingEvents = _scheduledEvents.value.filter { it.type != type }
+        prefs.saveScheduledEvents(remainingEvents)
+        _scheduledEvents.value = remainingEvents
+        computeTodayProgress()
+    }
+
     fun updateEventStatus(eventId: String, status: EventStatus) {
-        val currentList = _scheduledEvents.value.map { event ->
-            if (event.id == eventId) {
-                event.copy(status = status)
-            } else {
-                event
-            }
-        }
+        prefs.updateEventStatus(eventId, status)
+        refreshEvents()
 
-        // Save update
-        prefs.saveScheduledEvents(currentList)
-        _scheduledEvents.value = currentList
+        computeTodayProgress()
+    }
 
-        // Find updated event and record in history if completed/missed
-        val updatedEvent = currentList.find { it.id == eventId }
-        if (updatedEvent != null && (status == EventStatus.COMPLETED || status == EventStatus.MISSED)) {
-            val currentHistory = _historyEvents.value.toMutableList()
-            // Avoid duplicate additions
-            currentHistory.removeAll { it.id == eventId }
-            currentHistory.add(updatedEvent)
-            prefs.saveHistoryEvents(currentHistory)
-            _historyEvents.value = currentHistory
-        }
+    fun startSession(eventId: String) {
+        updateEventStatus(eventId, EventStatus.IN_PROGRESS)
+    }
 
+    fun refreshEvents() {
+        _scheduledEvents.value = prefs.getScheduledEvents()
+        _historyEvents.value = prefs.getHistoryEvents()
         computeTodayProgress()
     }
 
@@ -186,5 +194,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     companion object {
         const val TAG_DAILY_PLAN = "tag_daily_kegel_posture_plan"
+        fun tagForType(type: EventType): String = "tag_daily_${type.name.lowercase()}_plan"
     }
 }

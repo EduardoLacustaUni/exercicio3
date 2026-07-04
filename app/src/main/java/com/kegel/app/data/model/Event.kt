@@ -7,7 +7,7 @@ enum class EventType {
 }
 
 enum class EventStatus {
-    PENDING, COMPLETED, MISSED
+    PENDING, IN_PROGRESS, COMPLETED, MISSED
 }
 
 data class ScheduledEvent(

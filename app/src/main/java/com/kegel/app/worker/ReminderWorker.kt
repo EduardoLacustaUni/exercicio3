@@ -56,8 +56,9 @@ class ReminderWorker(
         // Open MainActivity when clicked
         val intent = Intent(applicationContext, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            // We can pass the event id to highlight or trigger something in the app
-            putExtra("EVENT_ID", eventId)
+            putExtra(KEY_EVENT_TYPE, typeStr)
+            putExtra(KEY_EVENT_DURATION, duration)
+            putExtra(KEY_EVENT_ID, eventId)
         }
 
         val pendingIntent = PendingIntent.getActivity(

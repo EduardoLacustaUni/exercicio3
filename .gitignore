@@ -1,0 +1,28 @@
+# Android Studio / IntelliJ
+.idea/
+*.iml
+.gradle/
+build/
+app/build/
+local.properties
+.navigation/
+
+# Log files
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Gradle files
+.gradle
+gradle-app.setting
+
+# Crashlytics/Firebase
+crashlytics.properties
+google-services.json
+
+# Secrets/Keys
+*.jks
+*.keystore
+secrets.properties

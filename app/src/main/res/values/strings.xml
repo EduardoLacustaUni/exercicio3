@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Kegel &amp; Posture</string>
+    <string name="notification_channel_name">Lembretes de Bem-Estar</string>
+    <string name="notification_channel_description">Notificações periódicas para manter sua saúde em dia.</string>
+</resources>

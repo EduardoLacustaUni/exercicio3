@@ -232,7 +232,7 @@ fun MainScreen(
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "${tempRange.start.roundToInt()}:00 - ${tempRange.end.roundToInt()}:00",
+                        text = "${tempRange.start.roundToInt()}:00 - ${tempRange.endInclusive.roundToInt()}:00",
                         style = MaterialTheme.typography.bodyMedium,
                         color = Sky400,
                         fontWeight = FontWeight.Bold
@@ -246,7 +246,7 @@ fun MainScreen(
                     steps = 23,
                     onValueChangeFinished = {
                         viewModel.setStartHour(tempRange.start.roundToInt())
-                        viewModel.setEndHour(tempRange.end.roundToInt())
+                        viewModel.setEndHour(tempRange.endInclusive.roundToInt())
                     },
                     colors = SliderDefaults.colors(
                         activeTrackColor = Sky400,

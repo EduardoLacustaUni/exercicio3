@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Kegel & Posture Reminder App
 
 Estrutura inicial de um aplicativo Android nativo desenvolvido do zero com **Kotlin**, **Jetpack Compose**, **WorkManager** e padrão de arquitetura **MVVM**.
@@ -85,3 +86,7 @@ O projeto já inclui um workflow de integração contínua (CI) em `.github/work
 
 *   `android.permission.POST_NOTIFICATIONS`: Necessária no Android 13+ (API 33) para enviar lembretes. O app possui rotina nativa na `MainActivity.kt` para solicitar essa permissão dinamicamente com as melhores práticas de UX.
 *   `android.permission.RECEIVE_BOOT_COMPLETED`: Garante que os lembretes persistirão mesmo se o dispositivo do usuário for reiniciado.
+=======
+# exercicio3
+Agendador de lembretes para Exercícios breves
+>>>>>>> e7e9d6dae158522c05cb163f48582ace1b7d07b2
